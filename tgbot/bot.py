@@ -21,18 +21,7 @@ import schedule  # noqa: E402
 import store  # noqa: E402
 
 
-def _load_env() -> None:
-    env = store.ROOT / ".env"
-    if not env.exists():
-        return
-    for line in env.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
-
-
-_load_env()
+db.load_env_files()  # already ran when store imported db; kept so the order is explicit
 
 from telegram import Update  # noqa: E402
 from telegram.ext import (  # noqa: E402

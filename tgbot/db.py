@@ -20,6 +20,28 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_env_files() -> None:
+    """Read .env.local (written by `neon env pull` / `neon deploy`) and .env into os.environ.
+
+    Real environment variables win, then .env.local, then .env. This runs on import, because store
+    and money import this module before bot.py gets a chance to load settings.
+    """
+    for name in (".env.local", ".env"):
+        path = ROOT / name
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("export "):
+                line = line[7:].strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+load_env_files()
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 FLUSH_EVERY = int(os.getenv("DB_FLUSH_EVERY", "25"))
 _lock = threading.RLock()
@@ -91,7 +113,9 @@ class PostgresBackend:
         atexit.register(self.flush)
 
     def _conn(self):
-        return self.psycopg.connect(self.url, autocommit=True, connect_timeout=20)
+        # DATABASE_URL from Neon is the pooled (-pooler, PgBouncer transaction mode) string, so turn off
+        # psycopg's automatic server-side prepared statements, which don't survive a pooled backend swap.
+        return self.psycopg.connect(self.url, autocommit=True, connect_timeout=20, prepare_threshold=None)
 
     def get_doc(self, name, default):
         with _lock:
