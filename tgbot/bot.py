@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import db  # noqa: E402
 import extract  # noqa: E402
 import money  # noqa: E402
+import montaj  # noqa: E402
 import schedule  # noqa: E402
 import store  # noqa: E402
 
@@ -61,6 +62,11 @@ Xarajatlar (Uzcard / Humo):
 
 Content:
 /plan <mavzu> [kunlar] — content plan (masalan: /plan qahvaxona 14)
+
+Montaj (Android telefonda):
+• botga video yuboring (20 MB gacha) — pauzalar kesiladi, subtitr + muqova, tayyor Reel qaytadi
+  (video izohi = sarlavha / muqova matni)
+/edit — inbox/ dagi kliplar; /edit 1 — montaj; /edit ~/storage/downloads/v.mp4 — katta fayl
 
 Avtomatlashtirish:
 /every <daily|weekdays|mon,tue..> <HH:MM> <vazifa> — takrorlanuvchi vazifa
@@ -426,6 +432,96 @@ async def reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
         store.save_settings(settings)
 
 
+# ---------- montaj (video edit, on the phone) ----------
+
+TG_DOWNLOAD_LIMIT = 20 * 1024 * 1024   # Bot API: getFile works up to 20 MB
+
+
+async def _run_edit(msg, src: Path, hint: str | None) -> None:
+    """Edit in the background and send the result back to the same chat."""
+    status = await msg.reply_text("⏳ Montaj navbatga qo'yildi…")
+
+    async def progress(text):
+        try:
+            await status.edit_text(text)
+        except Exception:
+            pass
+
+    try:
+        res = await montaj.edit(src, hint, progress)
+    except Exception as e:  # noqa: BLE001
+        log.exception("montaj failed")
+        await status.edit_text(f"❌ Montaj xatosi: {str(e)[:900]}")
+        return
+    caption = (f"🎬 {res['title']}\n"
+               f"⏱ {res['raw_seconds']} s → {res['edit_seconds']} s (−{res['removed_seconds']} s)\n"
+               f"🖼 Muqova: {res['cover_text']}\n📁 {res['folder']}/")
+    await status.edit_text("📤 Yuborilmoqda…")
+    with open(res["cover"], "rb") as f:
+        await msg.reply_photo(f, caption="Muqova (cover)", read_timeout=120, write_timeout=120)
+    with open(res["send"], "rb") as f:
+        await msg.reply_video(f, caption=caption[:1000], supports_streaming=True, width=1080, height=1920,
+                              read_timeout=600, write_timeout=600)
+    note = "" if res["send"] == res["edit"] else "\n(Telegram uchun 720p nusxa; asl 1080p fayl telefonda)"
+    await status.edit_text("✅ Tayyor. Hech narsa joylanmadi — tekshirib, o'zingiz post qiling." + note)
+
+
+async def on_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = update.effective_message
+    if update.effective_chat.type != "private" or not await guard(update):
+        return
+    problem = montaj.ready()
+    if problem:
+        await msg.reply_text("🎬 Montaj bu qurilmada ishlamaydi: " + problem)
+        return
+    media = msg.video or msg.document
+    if media.file_size and media.file_size > TG_DOWNLOAD_LIMIT:
+        await msg.reply_text(
+            f"📦 Video {media.file_size / 1048576:.0f} MB — Telegram botga faqat 20 MB gacha yuklab olishga ruxsat beradi.\n"
+            "Videoni telefondagi Download papkasiga saqlang va yozing:\n/edit ~/storage/downloads/<fayl>.mp4\n"
+            "yoki /edit — inbox/ dagi kliplar ro'yxati.")
+        return
+    name = getattr(media, "file_name", None) or f"tg_{msg.date.astimezone(TZ):%Y%m%d_%H%M%S}.mp4"
+    montaj.INBOX.mkdir(parents=True, exist_ok=True)
+    dst = montaj._unique(montaj.INBOX / (montaj.safe_name(name) + (Path(name).suffix.lower() or ".mp4")))
+    tg_file = await media.get_file()
+    await tg_file.download_to_drive(dst)
+    context.application.create_task(_run_edit(msg, dst, msg.caption))
+
+
+async def cmd_edit(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """/edit — list clips in inbox/; /edit 2 or /edit <file or path> [| cover text] — edit one."""
+    if not await guard(update):
+        return
+    msg = update.effective_message
+    problem = montaj.ready()
+    if problem:
+        await msg.reply_text("🎬 Montaj bu qurilmada ishlamaydi: " + problem)
+        return
+    arg = " ".join(context.args or [])
+    target, _, hint = arg.partition("|")
+    target, hint = target.strip(), hint.strip() or None
+    found = montaj.clips()
+    if not target:
+        if not found:
+            await msg.reply_text("📭 inbox/ bo'sh. Botga video yuboring (20 MB gacha) yoki:\n/edit ~/storage/downloads/video.mp4")
+            return
+        lines = [f"{i}. {p.name} ({p.stat().st_size / 1048576:.0f} MB)" for i, p in enumerate(found, 1)]
+        await msg.reply_text("🎞 inbox/ dagi kliplar:\n" + "\n".join(lines) +
+                             "\n\nMontaj: /edit 1   (muqova matni bilan: /edit 1 | UCH SO'Z MATN)")
+        return
+    if target.isdigit() and 1 <= int(target) <= len(found):
+        src = found[int(target) - 1]
+    else:
+        p = Path(target).expanduser()
+        p = p if p.is_absolute() else (montaj.INBOX / target if (montaj.INBOX / target).exists() else montaj.ROOT / target)
+        if not p.is_file() or not montaj.is_video(p):
+            await msg.reply_text(f"❓ Video topilmadi: {target}")
+            return
+        src = montaj.take_in(p)
+    context.application.create_task(_run_edit(msg, src, hint))
+
+
 async def flush_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     db.flush()
 
@@ -450,9 +546,11 @@ def main() -> None:
         "here": cmd_here, "settime": cmd_settime,
         "xarajat": cmd_spent, "spent": cmd_spent, "rashod": cmd_spent, "kirim": cmd_income, "income": cmd_income,
         "hisobot": cmd_report, "report": cmd_report, "sms": cmd_sms,
+        "edit": cmd_edit, "montaj": cmd_edit,
     }
     for name, fn in commands.items():
         app.add_handler(CommandHandler(name, fn))
+    app.add_handler(MessageHandler(filters.ChatType.PRIVATE & (filters.VIDEO | filters.Document.VIDEO), on_video))
     app.add_handler(MessageHandler((filters.TEXT | filters.CAPTION) & ~filters.COMMAND, on_message))
     schedule_daily(app)
     app.job_queue.run_repeating(reminder_job, interval=300, first=30, name="reminders")

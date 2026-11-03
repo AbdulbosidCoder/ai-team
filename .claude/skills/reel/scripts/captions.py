@@ -9,7 +9,7 @@ import argparse, os, re, subprocess, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-from media import FFMPEG, STT, audio, probe, report, speech_segments
+from media import FFMPEG, STT, audio, probe, report, speech_segments, whisper_cpp, whisper_cpp_run, write_wav
 
 ap = argparse.ArgumentParser()
 ap.add_argument("src"); ap.add_argument("out")
@@ -42,11 +42,28 @@ def words_phrases(path):
     return out
 
 
-try:
-    import faster_whisper  # noqa: F401
-    words, engine = words_faster_whisper(a.src), "faster-whisper"
-except ImportError:
-    words, engine = words_phrases(a.src), "sherpa-onnx whisper"
+def words_whisper_cpp(path):
+    """Word timestamps from whisper.cpp: one segment per word (-ml 1 -sow)."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        wav = os.path.join(d, "a.wav"); write_wav(wav, audio(path, SR), SR)
+        js = whisper_cpp_run(wav, ["-ml", "1", "-sow"], out_prefix=os.path.join(d, "out"))
+    out = []
+    for seg in js.get("transcription", []):
+        w = seg.get("text", "").strip()
+        if w and not re.fullmatch(r"\[.*\]|\(.*\)", w):       # skip [BLANK_AUDIO], (music)
+            out.append((w, seg["offsets"]["from"] / 1000, seg["offsets"]["to"] / 1000))
+    return out
+
+
+if whisper_cpp():
+    words, engine = words_whisper_cpp(a.src), "whisper.cpp"
+else:
+    try:
+        import faster_whisper  # noqa: F401
+        words, engine = words_faster_whisper(a.src), "faster-whisper"
+    except ImportError:
+        words, engine = words_phrases(a.src), "sherpa-onnx whisper"
 fixes = dict(r.split("=", 1) for r in a.replace if "=" in r)
 words = [(fixes.get(re.sub(r"[.,!?]+$", "", w), None) and fixes[re.sub(r"[.,!?]+$", "", w)] + w[len(re.sub(r"[.,!?]+$", "", w)):] or w, s0, e0) for w, s0, e0 in words]
 
