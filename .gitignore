@@ -1,0 +1,15 @@
+inbox/*
+!inbox/.gitkeep
+out/*
+!out/.gitkeep
+done/*
+!done/.gitkeep
+.claude/skills/reel/scripts/models/
+__pycache__/
+.env
+!inbox/radar/
+!inbox/stats/
+inbox/telegram/
+!inbox/biz/
+inbox/biz/*
+!inbox/biz/.gitkeep

@@ -1,0 +1,29 @@
+# Render Blueprint: бесплатный web service для Telegram-бота (tgbot/).
+# Render → New → Blueprint → выберите этот репозиторий. Секреты (sync: false) Render спросит при создании.
+services:
+  - type: web
+    name: ai-team-bot
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: pip install -r tgbot/requirements-render.txt
+    startCommand: python3 tgbot/bot.py
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ALLOWED_USER_IDS
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TZ_NAME
+        value: Asia/Tashkent
+      - key: DAILY_TIME
+        value: "08:00"
+      - key: USE_CLAUDE
+        value: auto
