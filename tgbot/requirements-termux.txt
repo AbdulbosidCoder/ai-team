@@ -1,0 +1,4 @@
+# Termux (Android): no anthropic package. Its dependency jiter (Rust) does not build on Termux.
+# The bot works without it (rule engine); the AI agent is Claude Code itself (setup-agent.sh).
+python-telegram-bot[job-queue]==21.6
+tzdata

@@ -4,6 +4,8 @@ Run:  python3 tgbot/bot.py        (settings come from .env or environment variab
 """
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import os
 import re
@@ -17,8 +19,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import db  # noqa: E402
 import extract  # noqa: E402
 import money  # noqa: E402
+import agent  # noqa: E402
 import montaj  # noqa: E402
 import schedule  # noqa: E402
+import userbot  # noqa: E402
 import store  # noqa: E402
 
 
@@ -41,6 +45,9 @@ TZ = ZoneInfo(os.getenv("TZ_NAME", "Asia/Tashkent"))
 ALLOWED = {int(x) for x in re.findall(r"-?\d+", os.getenv("ALLOWED_USER_IDS", ""))}
 
 HELP = """🤖 AI yordamchi — kunlik reja, content plan, biznes avtomatlashtirish
+
+💬 AI agent (Claude Code): shu chatga oddiy matn yozing — savol, topshiriq, "bugun kim nima yozdi?"
+/new — yangi suhbat   /ai — agent va Telegram ulanishi holati   /sync — o'z chatlaringizni hozir o'qish
 
 📥 Bot guruh/chatdagi xabarlarni o'qib, ulardan vazifalarni ajratadi.
 
@@ -124,6 +131,9 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
             await msg.reply_text(
                 (f"💳 Yozildi: {sign} {money._fmt(tx['amount'])} · {tx['card']} {tx['card_last4']}\n"
                  f"{tx['merchant'] or ''} ({tx['category']})") if added else "Bu operatsiya allaqachon yozilgan.")
+            return
+        if agent_on() and msg.text:
+            context.application.create_task(_agent_reply(update, context, msg.text))
             return
     sender = (user.username and f"@{user.username}") or (user.full_name if user else "?")
     store.save_message(
@@ -392,6 +402,8 @@ async def cmd_settime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def daily_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     settings = store.load_settings()
     chat_id = settings.get("report_chat_id")
+    if userbot.configured():                 # pull your own chats first, so the plan sees the latest messages
+        await run_userbot("sync")
     added, engine, n = await run_scan()
     d = today()
     text = schedule.day_text(store.load_tasks(), d, settings.get("recurring", []))
@@ -430,6 +442,101 @@ async def reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     if changed:
         settings["reminded"] = sorted(sent)[-200:]
         store.save_settings(settings)
+
+
+# ---------- AI agent (Claude Code) and your own Telegram (userbot) ----------
+
+def agent_on() -> bool:
+    """Free text in the private chat goes to Claude Code. Only with ALLOWED_USER_IDS set: the agent runs commands."""
+    return bool(ALLOWED) and os.getenv("AGENT", "auto") != "no" and agent.ready() is None
+
+
+async def _agent_reply(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str) -> None:
+    msg = update.effective_message
+    chat_id = update.effective_chat.id
+
+    async def typing():
+        while True:
+            try:
+                await context.bot.send_chat_action(chat_id, "typing")
+            except Exception:
+                pass
+            await asyncio.sleep(4.5)
+
+    ticker = asyncio.create_task(typing())
+    try:
+        settings = store.load_settings()
+        res = await agent.ask(text, settings.get("agent_session"))
+    finally:
+        ticker.cancel()
+    if res["session_id"]:
+        settings = store.load_settings()
+        settings["agent_session"] = res["session_id"]
+        store.save_settings(settings)
+    if res["error"] and not res["text"]:
+        await msg.reply_text("⚠️ Agent xatosi: " + str(res["error"])[:900])
+        return
+    await reply_long(update, res["text"] or "(bo'sh javob)")
+
+
+async def cmd_new(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await guard(update):
+        return
+    settings = store.load_settings()
+    settings["agent_session"] = None
+    store.save_settings(settings)
+    await update.effective_message.reply_text("🆕 Yangi suhbat boshlandi.")
+
+
+async def cmd_ai(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await guard(update):
+        return
+    problem = agent.ready()
+    lines = [
+        "🤖 Agent (Claude Code): " + ("✅ yoqilgan — oddiy matn yozing" if agent_on() else "❌ o'chiq"),
+        *( [f"   {problem}"] if problem else []),
+        *( ["   ALLOWED_USER_IDS bo'sh: agent faqat egasi uchun ishlaydi (/whoami → .env)"] if not ALLOWED else []),
+        "📨 Telegram (sizning akkauntingiz): " + ("✅ ulangan" if userbot.configured() else
+                                                 "❌ ulanmagan — python3 tgbot/userbot.py login"),
+    ]
+    await update.effective_message.reply_text("\n".join(lines))
+
+
+async def run_userbot(*args: str) -> dict:
+    proc = await asyncio.create_subprocess_exec(sys.executable, str(Path(__file__).with_name("userbot.py")), *args,
+                                                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    out, err = await proc.communicate()
+    lines = [ln for ln in out.decode(errors="replace").splitlines() if ln.startswith("{")]
+    if not lines:
+        return {"ok": False, "error": err.decode(errors="replace")[-500:]}
+    return json.loads(lines[-1])
+
+
+async def userbot_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Save new messages from your own chats; card notifications become expenses."""
+    if not userbot.configured():
+        return
+    res = await run_userbot("sync")
+    if not res.get("ok"):
+        log.warning("userbot sync failed: %s", res.get("error"))
+        return
+    chat_id = store.load_settings().get("report_chat_id")
+    if res.get("expenses_added") and chat_id:
+        lines = [f"{'➖' if t['kind'] == 'expense' else '➕'} {money._fmt(t['amount'])} {t.get('merchant') or ''}"
+                 for t in res["expenses"]]
+        await context.bot.send_message(chat_id, "💳 Yangi operatsiyalar:\n" + "\n".join(lines))
+
+
+async def cmd_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await guard(update):
+        return
+    if not userbot.configured():
+        await update.effective_message.reply_text("📨 Telegram akkaunt ulanmagan. Termux: python3 tgbot/userbot.py login")
+        return
+    res = await run_userbot("sync")
+    await update.effective_message.reply_text(
+        f"📨 {res.get('chats', 0)} ta chatdan {res.get('messages_saved', 0)} ta xabar saqlandi, "
+        f"{res.get('expenses_added', 0)} ta karta operatsiyasi." if res.get("ok") else f"⚠️ {res.get('error')}")
 
 
 # ---------- montaj (video edit, on the phone) ----------
@@ -547,6 +654,7 @@ def main() -> None:
         "xarajat": cmd_spent, "spent": cmd_spent, "rashod": cmd_spent, "kirim": cmd_income, "income": cmd_income,
         "hisobot": cmd_report, "report": cmd_report, "sms": cmd_sms,
         "edit": cmd_edit, "montaj": cmd_edit,
+        "new": cmd_new, "ai": cmd_ai, "sync": cmd_sync,
     }
     for name, fn in commands.items():
         app.add_handler(CommandHandler(name, fn))
@@ -557,6 +665,8 @@ def main() -> None:
     if os.getenv("SMS_AUTO_IMPORT", "0") == "1":
         app.job_queue.run_repeating(sms_job, interval=900, first=60, name="sms")
     app.job_queue.run_repeating(flush_job, interval=600, first=600, name="db-flush")
+    app.job_queue.run_repeating(userbot_job, interval=60 * int(os.getenv("TG_SYNC_MINUTES", "10")), first=90,
+                                name="userbot-sync")
     log.info("Bot ishga tushdi. Daily report at %s (%s)", store.load_settings()["daily_time"], TZ)
     base_url = (os.getenv("WEBHOOK_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").rstrip("/")
     try:

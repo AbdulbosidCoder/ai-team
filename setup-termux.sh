@@ -4,10 +4,10 @@
 set -e
 cd "$(dirname "$0")"
 pkg update -y
-# rust нужен, чтобы pip собрал pydantic-core (зависимость anthropic)
 # pip ставится пакетом python-pip; обновлять его через pip в Termux нельзя ("Installing pip is forbidden")
-pkg install -y python python-pip git rust binutils termux-api tmux
-python -m pip install -r tgbot/requirements.txt
+pkg install -y python python-pip git termux-api tmux
+# без anthropic: его зависимость jiter не собирается на Termux. AI-агент — сам Claude Code (setup-agent.sh)
+python -m pip install -r tgbot/requirements-termux.txt
 mkdir -p inbox/telegram inbox/biz out/timetable out/plan out/money
 # Разрешение на чтение SMS (учёт расходов Uzcard/Humo): нажмите «Разрешить» в окне Android
 termux-sms-list -l 1 >/dev/null 2>&1 || true
