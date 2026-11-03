@@ -16,3 +16,4 @@ inbox/biz/*
 .neon
 node_modules/
 .env.local
+.secrets/
