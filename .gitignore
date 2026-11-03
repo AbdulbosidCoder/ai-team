@@ -13,3 +13,6 @@ inbox/telegram/
 !inbox/biz/
 inbox/biz/*
 !inbox/biz/.gitkeep
+.neon
+node_modules/
+.env.local

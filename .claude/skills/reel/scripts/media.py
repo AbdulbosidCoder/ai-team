@@ -56,9 +56,44 @@ def report(**kw):
 FILLERS = {"um", "uh", "erm", "er", "hmm", "ah", "uhm", "mm"}
 
 
+def whisper_cpp():
+    """(binary, model) of a whisper.cpp install, or None. Used on Android/Termux, where faster-whisper and
+    sherpa-onnx have no wheels. Set WHISPER_CPP_MODEL (a ggml-*.bin file) and optionally WHISPER_CPP (binary)."""
+    import shutil
+    model = os.path.expanduser(os.environ.get("WHISPER_CPP_MODEL", ""))
+    binary = shutil.which(os.path.expanduser(os.environ.get("WHISPER_CPP", "whisper-cli")))
+    return (binary, model) if model and os.path.isfile(model) and binary else None
+
+
+def write_wav(path, pcm, sr=16000):
+    import wave
+    with wave.open(path, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr)
+        w.writeframes((np.clip(pcm, -1, 1) * 32767).astype("<i2").tobytes())
+
+
+def whisper_cpp_run(wav, extra, out_prefix=None):
+    """Run whisper-cli on a 16 kHz wav; returns stdout (or the JSON it wrote when out_prefix is given)."""
+    binary, model = whisper_cpp()
+    args = [binary, "-m", model, "-f", wav, "-l", os.environ.get("WHISPER_LANG", "en"), "-np",
+            "-t", os.environ.get("WHISPER_THREADS", str(min(4, os.cpu_count() or 2)))] + extra
+    if out_prefix:
+        args += ["-oj", "-of", out_prefix]
+    p = subprocess.run(args, capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError("whisper.cpp: " + p.stderr[-800:])
+    if out_prefix:
+        with open(out_prefix + ".json", encoding="utf-8") as f:
+            return json.load(f)
+    return p.stdout
+
+
 class STT:
-    """Local speech-to-text: faster-whisper if installed, otherwise sherpa-onnx Whisper (see tools/setup.sh)."""
+    """Local speech-to-text: whisper.cpp when WHISPER_CPP_MODEL is set (Android), else faster-whisper, else sherpa-onnx."""
     def __init__(self):
+        if whisper_cpp():
+            self.fw = None; self.rec = None; self.engine = "whisper.cpp"
+            return
         try:
             from faster_whisper import WhisperModel
             self.fw = WhisperModel(os.environ.get("WHISPER_MODEL", "small.en"), compute_type="int8"); self.engine = "faster-whisper"
@@ -73,6 +108,11 @@ class STT:
 
     def text(self, pcm, sr=16000):
         """Transcript of a short piece of audio."""
+        if self.engine == "whisper.cpp":
+            import tempfile
+            with tempfile.TemporaryDirectory() as d:
+                wav = os.path.join(d, "a.wav"); write_wav(wav, pcm, sr)
+                return " ".join(whisper_cpp_run(wav, ["-nt"]).split())
         if self.fw is not None:
             segs, _ = self.fw.transcribe(pcm, language="en")
             return " ".join(x.text.strip() for x in segs)
