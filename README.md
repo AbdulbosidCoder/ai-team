@@ -1,4 +1,17 @@
-# AI Team: Telegram planner, expenses, Instagram content and video editing
+# AI Team — SMM uchun moslangan versiya
+
+**Bu nusxa SMM mutaxassisi uchun sozlangan:** Instagram storislar, kontent-reja, Reels ssenariylari va captionlar — o'zbek tilida.
+
+- **Mijozlar:** Shoxsaroy Towers (faqat storislar, 6 kun × 3+ storis), universitet, shaxsiy brend (qurilish)
+- **Yangi skill — `stories`:** har bir storis uchun ekrandagi matn, rasm/video, stiker va chaqiriq
+- **Mijoz ma'lumotlari:** `inbox/biz/<mijoz>/README.md` — narx, manzil, FAQ shu yerga yoziladi; agent faqat shu faktlardan foydalanadi
+- **Brend qoidalari:** `brain/memory.jsonl` ("Brand rules" va "Clients")
+
+Botga misol: *"Shoxsaroy uchun 6 kunlik storis rejasi tuz"*, *"Universitet uchun haftalik kontent-reja"*.
+
+---
+
+## AI Team: Telegram planner, expenses, Instagram content and video editing
 
 One Claude Code agent with a library of six skills that turns raw clips into short vertical videos, writes scripts, finds video ideas, writes post copy and learns from your stats. A shared brain remembers your brand rules, and nothing is published without your OK.
 

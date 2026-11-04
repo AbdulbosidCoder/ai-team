@@ -1,6 +1,6 @@
 ---
 name: reel
-description: Edit ONE raw clip from inbox/ into a finished vertical reel with burned-in captions, following the brand rules. Use when Bekhruz asks to edit, cut or "make a reel" from a clip. For the cover image, also use the pixel skill.
+description: Edit ONE raw clip from inbox/ into a finished vertical reel with burned-in captions, following the brand rules. Use when the owner asks to edit, cut or "make a reel" from a clip. For the cover image, also use the pixel skill.
 ---
 
 # Reel: one raw clip in, a finished vertical edit out

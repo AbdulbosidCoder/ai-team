@@ -17,3 +17,6 @@ inbox/biz/*
 node_modules/
 .env.local
 .secrets/
+!inbox/biz/*/
+inbox/biz/*/*
+!inbox/biz/*/README.md
