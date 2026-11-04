@@ -11,7 +11,9 @@ cd "$(dirname "$0")"
 MODEL="${1:-small}"
 WDIR="$HOME/whisper.cpp"
 
-pkg install -y ffmpeg python-numpy python-pillow clang cmake make git wget
+pkg install -y ffmpeg python-numpy python-pillow clang cmake make git wget poppler
+# Free voice-over voices in Uzbek, Russian and English (needs internet when it speaks)
+python -m pip install edge-tts || echo "edge-tts did not install: voice-over will be off, everything else works"
 
 # Access to phone storage (Download, DCIM) so /edit ~/storage/downloads/video.mp4 works
 [ -d "$HOME/storage" ] || termux-setup-storage || true
@@ -32,7 +34,7 @@ grep -v -E '^(WHISPER_CPP|WHISPER_CPP_MODEL|WHISPER_LANG)=' .env > .env.new || t
   echo "WHISPER_CPP_MODEL=$WDIR/models/ggml-$MODEL.bin"
 } > .env
 rm -f .env.new
-mkdir -p inbox out done
+mkdir -p inbox inbox/music out done
 
 echo
 echo "Montaj tayyor. Botni qayta ishga tushiring:"

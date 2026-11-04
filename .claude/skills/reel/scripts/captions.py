@@ -10,7 +10,7 @@ import argparse, os, re, subprocess, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-from media import FFMPEG, STT, audio, elevenlabs_key, elevenlabs_words, lang, probe, report, speech_segments, whisper_cpp, whisper_cpp_run, write_wav
+from media import FFMPEG, norm_text, probe, report, transcribe_words
 
 ap = argparse.ArgumentParser()
 ap.add_argument("src"); ap.add_argument("out")
@@ -24,55 +24,8 @@ a = ap.parse_args()
 SR = 16000
 
 
-def words_faster_whisper(path):
-    from faster_whisper import WhisperModel
-    m = WhisperModel(os.environ.get("WHISPER_MODEL", "medium"), compute_type="int8")
-    segs, _ = m.transcribe(path, language=lang(), word_timestamps=True, vad_filter=True)
-    return [(w.word.strip(), w.start, w.end) for s in segs for w in s.words if w.word.strip()]
-
-
-def words_phrases(path):
-    """Phrase by phrase transcription; each phrase's time is spread over its words by length."""
-    stt, pcm, out = STT(), audio(path, SR), []
-    for s, e in speech_segments(path, noise_db=-35, min_silence=0.2):
-        toks = stt.text(pcm[int(s * SR):int(e * SR)]).split()
-        if not toks: continue
-        wts = [len(re.sub(r"\W", "", t)) + 2 for t in toks]; tot = sum(wts); t = s + 0.05; span = (e - s) - 0.1
-        for tok, w in zip(toks, wts):
-            dur = span * w / tot; out.append((tok, t, t + dur * 0.92)); t += dur
-    return out
-
-
-def words_whisper_cpp(path):
-    """Word timestamps from whisper.cpp: one segment per word (-ml 1 -sow)."""
-    import tempfile
-    with tempfile.TemporaryDirectory() as d:
-        wav = os.path.join(d, "a.wav"); write_wav(wav, audio(path, SR), SR)
-        js = whisper_cpp_run(wav, ["-ml", "1", "-sow"], out_prefix=os.path.join(d, "out"))
-    out = []
-    for seg in js.get("transcription", []):
-        w = seg.get("text", "").strip()
-        if w and not re.fullmatch(r"\[.*\]|\(.*\)", w):       # skip [BLANK_AUDIO], (music)
-            out.append((w, seg["offsets"]["from"] / 1000, seg["offsets"]["to"] / 1000))
-    return out
-
-
-words = None
-if elevenlabs_key():
-    try:
-        words, engine = elevenlabs_words(a.src), "elevenlabs scribe"
-    except Exception as e:                      # no internet, bad key or no credits: fall back to a local model
-        print(f"elevenlabs failed, using a local model: {e}", file=sys.stderr)
-if words is not None:
-    pass
-elif whisper_cpp():
-    words, engine = words_whisper_cpp(a.src), "whisper.cpp"
-else:
-    try:
-        import faster_whisper  # noqa: F401
-        words, engine = words_faster_whisper(a.src), "faster-whisper"
-    except ImportError:
-        words, engine = words_phrases(a.src), "sherpa-onnx whisper"
+words, engine, _lang = transcribe_words(a.src)
+words = [(norm_text(w), s0, e0) for w, s0, e0 in words]
 fixes = dict(r.split("=", 1) for r in a.replace if "=" in r)
 words = [(fixes.get(re.sub(r"[.,!?]+$", "", w), None) and fixes[re.sub(r"[.,!?]+$", "", w)] + w[len(re.sub(r"[.,!?]+$", "", w)):] or w, s0, e0) for w, s0, e0 in words]
 

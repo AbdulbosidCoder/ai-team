@@ -154,6 +154,27 @@ Batafsil (ruscha): [RENDER.md](RENDER.md).
 
 ---
 
+## Video montaj agentlari
+
+7-qadamdagi `bash setup-montaj.sh` hammasini o'rnatadi: ffmpeg, nutqni tanish modeli, bepul ovozlar (edge-tts) va PDF o'quvchi.
+
+Ish tartibi:
+1. **rejissor** (bosh agent) videoni ko'radi. Qaysi tilda gapirilganini aniqlaydi, rangni tanlaydi va ish rejasini yozadi (`out/<nom>/plan.md`). Rejada har bir qadamni qaysi agent, qaysi funksiya bilan bajarishi ko'rsatiladi.
+2. Yordamchi agentlar rejani ketma-ket bajaradi:
+   - **ovozchi**: til, transkript, ovozni tozalash, matn orqali kesish, diktor ovozi
+   - **montaj**: kesish, birlashtirish, rang, stabilizatsiya, zoom, musiqa, logo, eksport
+   - **subtitrchi**: o'zbekcha, ruscha va inglizcha subtitr, sarlavhalar
+   - **taqdimotchi**: taqdimotni sinematik videoga aylantirish
+3. Tayyor video `out/<nom>/final.mp4` ga tushadi.
+
+Claude'ga misollar:
+- *"inbox dagi videoni Shoxsaroy uchun Reels qil: luxury rang, o'zbekcha va ruscha subtitr, musiqa"*
+- *"Shoxsaroy uchun 6 slaydli taqdimot tuz va uni ovozli sinematik videoga aylantir"*
+- *"Videodagi 'eee' va takror gaplarni olib tashla"*
+- *"Bu PDF taqdimotni 16:9 videoga aylantir"*
+
+Musiqa ishlatmoqchi bo'lsangiz, faylni `inbox/music/` papkasiga qo'ying. Agent internetdan qo'shiq olmaydi.
+
 ## Mijoz ma'lumotlarini kiritish
 
 Agent faqat siz bergan faktlardan foydalanadi: narx va sanalarni o'zi to'qimaydi. Shuning uchun ma'lumotlarni quyidagi papkalarga yozing:

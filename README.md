@@ -6,6 +6,10 @@
 - **Yangi skill — `stories`:** har bir storis uchun ekrandagi matn, rasm/video, stiker va chaqiriq
 - **Mijoz ma'lumotlari:** `inbox/biz/<mijoz>/README.md` — narx, manzil, FAQ shu yerga yoziladi; agent faqat shu faktlardan foydalanadi
 - **Subtitrlar:** o'zbekcha va ruscha nutq (aralash ham) avtomatik taniladi. Eng yaxshi sifat — `.env` da `ELEVENLABS_API_KEY`; bo'lmasa ko'p tilli Whisper ishlaydi
+- **Video montaj jamoasi:** bosh agent **rejissor** ish rejasini (`plan.json`) yozadi. Yordamchilar **ovozchi**, **montaj**, **subtitrchi** va **taqdimotchi** uni ketma-ket bajaradi (`plan.py run`)
+- **Montaj funksiyalari (`edit`):** kesish, birlashtirish va o'tishlar, 9:16, tezlik, 10 ta rang preseti va LUT, stabilizatsiya, shovqinni kamaytirish, zoom, b-roll, matn, logo, musiqa (ovoz ostida avtomatik pasayadi), har qanday tilda subtitr, Reels/Story/post/YouTube/Telegram uchun eksport
+- **Ovoz (`voice`):** gapirilgan tilni aniqlash (uz/ru/en, aralash ham), transkript, ovozni tozalash, matnni tahrirlab videoni kesish, bepul diktor ovozlari (edge-tts: Madina, Sardor, Svetlana, Dmitry…)
+- **Taqdimot → sinematik video (`slides-video`):** slaydlar, Ken Burns harakati, o'tishlar, rang, donadorlik, ovoz, musiqa va subtitr. PDF, PPTX yoki rasmlar papkasidan ham ishlaydi
 - **Brend qoidalari:** `brain/memory.jsonl` ("Brand rules" va "Clients")
 
 **O'rnatish:** [INSTALL.md](INSTALL.md) — o'zbekcha, qadamma-qadam.

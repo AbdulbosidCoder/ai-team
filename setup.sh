@@ -15,7 +15,9 @@ else
   tar xjf /tmp/whisper-small.tar.bz2 -C .claude/skills/reel/scripts/models
 fi
 echo "Tip: for the best Uzbek subtitles put ELEVENLABS_API_KEY in .env (cp .env.example .env)"
-mkdir -p inbox/radar inbox/stats inbox/telegram inbox/biz out/timetable out/plan done brain
+python3 -m pip install --quiet edge-tts || echo "edge-tts did not install: voice-over will be off"
+command -v pdftoppm >/dev/null || echo "Optional: install poppler (pdftoppm) to turn PDF decks into videos"
+mkdir -p inbox/radar inbox/stats inbox/telegram inbox/biz inbox/music out/timetable out/plan done brain
 python3 -m pip install --quiet -r tgbot/requirements.txt
 echo
 echo "Ready. Put raw clips in inbox/, start Claude Code here with: claude"
