@@ -256,7 +256,7 @@ async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     await update.effective_message.reply_text("⏳ Content plan tayyorlanmoqda…")
     plan, engine = extract.content_plan(topic, days, start=today() + timedelta(days=1),
-                                        platforms=os.getenv("PLATFORMS", "Instagram, Telegram, YouTube Shorts"))
+                                        platforms=os.getenv("PLATFORMS", "Instagram, Telegram"))
     md = extract.plan_to_markdown(topic, plan)
     store.PLAN_DIR.mkdir(parents=True, exist_ok=True)
     slug = re.sub(r"\W+", "-", topic.lower()).strip("-")[:40] or "plan"

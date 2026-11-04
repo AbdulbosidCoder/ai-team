@@ -1,6 +1,6 @@
 ---
 name: pixel
-description: Make the cover image (thumbnail) for a cut clip, following the brand cover rules. Use whenever an edit needs a cover, or when Bekhruz asks for a cover or thumbnail.
+description: Make the cover image (thumbnail) for a cut clip, following the brand cover rules. Use whenever an edit needs a cover, or when the owner asks for a cover or thumbnail.
 ---
 
 # Pixel: the cover

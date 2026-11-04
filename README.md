@@ -1,4 +1,24 @@
-# AI Team: Telegram planner, expenses, Instagram content and video editing
+# AI Team — SMM uchun moslangan versiya
+
+**Bu nusxa SMM mutaxassisi uchun sozlangan:** Instagram storislar, kontent-reja, Reels ssenariylari va captionlar — o'zbek tilida.
+
+- **Mijozlar:** Shoxsaroy Towers (faqat storislar, 6 kun × 3+ storis), universitet, shaxsiy brend (qurilish)
+- **Yangi skill — `stories`:** har bir storis uchun ekrandagi matn, rasm/video, stiker va chaqiriq
+- **Mijoz ma'lumotlari:** `inbox/biz/<mijoz>/README.md` — narx, manzil, FAQ shu yerga yoziladi; agent faqat shu faktlardan foydalanadi
+- **Subtitrlar:** o'zbekcha va ruscha nutq (aralash ham) avtomatik taniladi. Eng yaxshi sifat — `.env` da `ELEVENLABS_API_KEY`; bo'lmasa ko'p tilli Whisper ishlaydi
+- **Video montaj jamoasi:** bosh agent **rejissor** ish rejasini (`plan.json`) yozadi. Yordamchilar **ovozchi**, **montaj**, **subtitrchi** va **taqdimotchi** uni ketma-ket bajaradi (`plan.py run`)
+- **Montaj funksiyalari (`edit`):** kesish, birlashtirish va o'tishlar, 9:16, tezlik, 10 ta rang preseti va LUT, stabilizatsiya, shovqinni kamaytirish, zoom, b-roll, matn, logo, musiqa (ovoz ostida avtomatik pasayadi), har qanday tilda subtitr, Reels/Story/post/YouTube/Telegram uchun eksport
+- **Ovoz (`voice`):** gapirilgan tilni aniqlash (uz/ru/en, aralash ham), transkript, ovozni tozalash, matnni tahrirlab videoni kesish, bepul diktor ovozlari (edge-tts: Madina, Sardor, Svetlana, Dmitry…)
+- **Taqdimot → sinematik video (`slides-video`):** slaydlar, Ken Burns harakati, o'tishlar, rang, donadorlik, ovoz, musiqa va subtitr. PDF, PPTX yoki rasmlar papkasidan ham ishlaydi
+- **Brend qoidalari:** `brain/memory.jsonl` ("Brand rules" va "Clients")
+
+**O'rnatish:** [INSTALL.md](INSTALL.md) — o'zbekcha, qadamma-qadam.
+
+Botga misol: *"Shoxsaroy uchun 6 kunlik storis rejasi tuz"*, *"Universitet uchun haftalik kontent-reja"*.
+
+---
+
+## AI Team: Telegram planner, expenses, Instagram content and video editing
 
 One Claude Code agent with a library of six skills that turns raw clips into short vertical videos, writes scripts, finds video ideas, writes post copy and learns from your stats. A shared brain remembers your brand rules, and nothing is published without your OK.
 
@@ -31,7 +51,7 @@ Each skill is a folder with a `SKILL.md`. Claude Code only reads the name and th
 You need [Claude Code](https://claude.com/claude-code), ffmpeg, Python 3.10+ and Node.js 18+.
 
 ```bash
-git clone https://github.com/AbdulbosidCoder/ai-team
+git clone https://github.com/Risqulov06/ai-team
 cd ai-team
 bash setup.sh
 ```

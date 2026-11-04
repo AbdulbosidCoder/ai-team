@@ -6,15 +6,18 @@ command -v ffmpeg >/dev/null || { echo "Install ffmpeg first (macOS: brew instal
 command -v npx >/dev/null || { echo "Install Node.js 18+ first (it runs the shared-brain memory server)"; exit 1; }
 python3 -m pip install --quiet numpy pillow
 if python3 -m pip install --quiet faster-whisper; then
-  echo "speech-to-text: faster-whisper (downloads its model on first use)"
+  echo "speech-to-text: faster-whisper, multilingual 'medium' model for Uzbek + Russian (downloads on first use)"
 else
   echo "faster-whisper did not install, using sherpa-onnx Whisper instead"
   python3 -m pip install --quiet sherpa-onnx
   mkdir -p .claude/skills/reel/scripts/models
-  curl -L -o /tmp/whisper-tiny.en.tar.bz2 https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.en.tar.bz2
-  tar xjf /tmp/whisper-tiny.en.tar.bz2 -C .claude/skills/reel/scripts/models
+  curl -L -o /tmp/whisper-small.tar.bz2 https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-small.tar.bz2
+  tar xjf /tmp/whisper-small.tar.bz2 -C .claude/skills/reel/scripts/models
 fi
-mkdir -p inbox/radar inbox/stats inbox/telegram inbox/biz out/timetable out/plan done brain
+echo "Tip: for the best Uzbek subtitles put ELEVENLABS_API_KEY in .env (cp .env.example .env)"
+python3 -m pip install --quiet edge-tts || echo "edge-tts did not install: voice-over will be off"
+command -v pdftoppm >/dev/null || echo "Optional: install poppler (pdftoppm) to turn PDF decks into videos"
+mkdir -p inbox/radar inbox/stats inbox/telegram inbox/biz inbox/music out/timetable out/plan done brain
 python3 -m pip install --quiet -r tgbot/requirements.txt
 echo
 echo "Ready. Put raw clips in inbox/, start Claude Code here with: claude"

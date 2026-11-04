@@ -1,6 +1,6 @@
 ---
 name: pulse
-description: Read exported analytics (CSV files in inbox/stats/) and turn them into lessons the other skills use next time. Use when Bekhruz shares stats or asks what worked and what didn't.
+description: Read exported analytics (CSV files in inbox/stats/) and turn them into lessons the other skills use next time. Use when the owner shares stats or asks what worked and what didn't.
 ---
 
 # Pulse: numbers in, lessons out

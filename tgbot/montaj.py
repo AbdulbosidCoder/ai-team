@@ -73,8 +73,8 @@ def ready() -> str | None:
         import PIL  # noqa: F401
     except ImportError:
         return "numpy / pillow yo'q. Termux: pkg install python-numpy python-pillow"
-    from media import whisper_cpp
-    if whisper_cpp():
+    from media import elevenlabs_key, whisper_cpp
+    if elevenlabs_key() or whisper_cpp():
         return None
     for mod in ("faster_whisper", "sherpa_onnx"):
         try:
@@ -82,8 +82,8 @@ def ready() -> str | None:
             return None
         except ImportError:
             continue
-    return ("Nutqni tanish (speech-to-text) yo'q. Termux: bash setup-montaj.sh, "
-            "keyin .env da WHISPER_CPP_MODEL ni tekshiring.")
+    return ("Nutqni tanish (speech-to-text) yo'q. Eng osoni: .env ga ELEVENLABS_API_KEY yozing "
+            "(o'zbekcha + ruscha). Yoki telefonda: bash setup-montaj.sh")
 
 
 def is_video(path: Path) -> bool:

@@ -306,7 +306,7 @@ ANGLES = [
 
 
 def content_plan(topic: str, days: int = 7, start: date | None = None,
-                 platforms: str = "Instagram, Telegram, YouTube Shorts", brand_rules: str = "") -> tuple[list[dict], str]:
+                 platforms: str = "Instagram, Telegram", brand_rules: str = "") -> tuple[list[dict], str]:
     start = start or date.today()
     if _want_claude():
         try:

@@ -31,7 +31,7 @@ cron-job.org: каждые 10 мин GET на адрес бота, чтобы Re
 ## 3. Render (бот)
 
 1. Зайдите на **render.com** и войдите через GitHub.
-2. **New → Blueprint** → выберите репозиторий `AbdulbosidCoder/ai-team`. Render найдёт `render.yaml` и создаст сервис `ai-team-bot` на бесплатном тарифе.
+2. **New → Blueprint** → выберите репозиторий `Risqulov06/ai-team`. Render найдёт `render.yaml` и создаст сервис `ai-team-bot` на бесплатном тарифе.
 3. Render спросит секреты:
    - `TELEGRAM_BOT_TOKEN` — токен из шага 2
    - `DATABASE_URL` — строка из Neon

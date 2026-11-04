@@ -1,6 +1,6 @@
 ---
 name: radar
-description: Turn comments, notes and links saved in inbox/radar/ into a ranked shortlist of video ideas. Use when Bekhruz asks what to make next, wants ideas, or asks to go through comments.
+description: Turn comments, notes and links saved in inbox/radar/ into a ranked shortlist of content ideas. Use when the owner asks what to make next, wants ideas, or asks to go through comments.
 ---
 
 # Radar: what should we make next?
