@@ -8,6 +8,8 @@
 - **Subtitrlar:** o'zbekcha va ruscha nutq (aralash ham) avtomatik taniladi. Eng yaxshi sifat — `.env` da `ELEVENLABS_API_KEY`; bo'lmasa ko'p tilli Whisper ishlaydi
 - **Brend qoidalari:** `brain/memory.jsonl` ("Brand rules" va "Clients")
 
+**O'rnatish:** [INSTALL.md](INSTALL.md) — o'zbekcha, qadamma-qadam.
+
 Botga misol: *"Shoxsaroy uchun 6 kunlik storis rejasi tuz"*, *"Universitet uchun haftalik kontent-reja"*.
 
 ---
@@ -45,7 +47,7 @@ Each skill is a folder with a `SKILL.md`. Claude Code only reads the name and th
 You need [Claude Code](https://claude.com/claude-code), ffmpeg, Python 3.10+ and Node.js 18+.
 
 ```bash
-git clone https://github.com/AbdulbosidCoder/ai-team
+git clone https://github.com/Risqulov06/ai-team
 cd ai-team
 bash setup.sh
 ```

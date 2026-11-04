@@ -30,7 +30,7 @@ pkg install -y git
 ```
 
 ```bash
-git clone https://github.com/AbdulbosidCoder/ai-team
+git clone https://github.com/Risqulov06/ai-team
 ```
 
 ```bash
