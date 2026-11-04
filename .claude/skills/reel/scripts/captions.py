@@ -2,14 +2,15 @@
 
 usage: python3 tools/captions.py <in.mp4> <out.mp4> [--srt captions.srt] [--color #FFD400] [--words 3] [--y 0.70] [--replace "wrong=right" ...]
 
-Speech-to-text runs locally: faster-whisper if it is installed (word timestamps), otherwise sherpa-onnx Whisper
-(model folder in $WHISPER_ONNX_DIR or .claude/skills/reel/scripts/models/sherpa-onnx-whisper-tiny.en, see setup.sh).
+Speech language: Uzbek and Russian (also mixed in one clip), set by WHISPER_LANG (auto | uz | ru).
+Speech-to-text: ElevenLabs Scribe when ELEVENLABS_API_KEY is set (best for Uzbek), else local multilingual Whisper:
+whisper.cpp (WHISPER_CPP_MODEL), faster-whisper (WHISPER_MODEL, default medium), or sherpa-onnx Whisper small (see setup.sh).
 """
 import argparse, os, re, subprocess, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-from media import FFMPEG, STT, audio, probe, report, speech_segments, whisper_cpp, whisper_cpp_run, write_wav
+from media import FFMPEG, STT, audio, elevenlabs_key, elevenlabs_words, lang, probe, report, speech_segments, whisper_cpp, whisper_cpp_run, write_wav
 
 ap = argparse.ArgumentParser()
 ap.add_argument("src"); ap.add_argument("out")
@@ -25,8 +26,8 @@ SR = 16000
 
 def words_faster_whisper(path):
     from faster_whisper import WhisperModel
-    m = WhisperModel(os.environ.get("WHISPER_MODEL", "small.en"), compute_type="int8")
-    segs, _ = m.transcribe(path, word_timestamps=True, vad_filter=True)
+    m = WhisperModel(os.environ.get("WHISPER_MODEL", "medium"), compute_type="int8")
+    segs, _ = m.transcribe(path, language=lang(), word_timestamps=True, vad_filter=True)
     return [(w.word.strip(), w.start, w.end) for s in segs for w in s.words if w.word.strip()]
 
 
@@ -56,7 +57,15 @@ def words_whisper_cpp(path):
     return out
 
 
-if whisper_cpp():
+words = None
+if elevenlabs_key():
+    try:
+        words, engine = elevenlabs_words(a.src), "elevenlabs scribe"
+    except Exception as e:                      # no internet, bad key or no credits: fall back to a local model
+        print(f"elevenlabs failed, using a local model: {e}", file=sys.stderr)
+if words is not None:
+    pass
+elif whisper_cpp():
     words, engine = words_whisper_cpp(a.src), "whisper.cpp"
 else:
     try:

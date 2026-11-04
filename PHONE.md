@@ -144,13 +144,13 @@ bash setup-agent.sh
 bash setup-montaj.sh
 ```
 
-Скрипт ставит ffmpeg, numpy и pillow, собирает [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (распознавание речи прямо на телефоне, без интернета) и прописывает `WHISPER_CPP` и `WHISPER_CPP_MODEL` в `.env`. Android спросит доступ к файлам: разрешите. Модель по умолчанию `base.en` (английская речь). Для узбекской или русской речи:
+Скрипт ставит ffmpeg, numpy и pillow, собирает [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (распознавание речи прямо на телефоне, без интернета) и прописывает `WHISPER_CPP` и `WHISPER_CPP_MODEL` в `.env`. Android спросит доступ к файлам: разрешите. Модель по умолчанию `small` — многоязычная, для узбекской и русской речи (также вперемешку). Лучшее качество для узбекского — ключ `ELEVENLABS_API_KEY` в `.env` (облако). Другие размеры модели:
 
 ```bash
 bash setup-montaj.sh small
 ```
 
-Потом в `.env` поставьте `WHISPER_LANG=uz` (или `ru`, `auto`). Перезапустите бота:
+Язык в `.env`: `WHISPER_LANG=auto` (узбекский + русский, по умолчанию), или `uz`, `ru`. Перезапустите бота:
 
 ```bash
 tmux kill-session -t tgbot

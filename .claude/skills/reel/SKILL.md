@@ -12,7 +12,8 @@ Call the clip `<name>` (its file name without the extension). Run every step as 
    Removes pauses and filler-only phrases ("um", "uh") and reframes to vertical.
 3. **Captions.** `python3 .claude/skills/reel/scripts/captions.py out/<name>/cut.mp4 out/<name>/edit.mp4 --srt out/<name>/captions.srt --color <caption color> --words 3 --size 56`
    Always pass `--size 56`: the default size clips long 3-word lines (e.g. "REPO SCRIPTS ALREADY") at the frame edges.
-   It prints the transcript. Read it. If a word is clearly misheard, run it again with `--replace "wrong=right"` (repeatable).
+   Speech is Uzbek and Russian, often mixed in one clip; the language is detected on its own (`WHISPER_LANG=auto`). The result's `engine` says which model ran: `elevenlabs scribe` is the best for Uzbek; a local Whisper is the fallback.
+   It prints the transcript. Read it. If a word is clearly misheard, run it again with `--replace "wrong=right"` (repeatable). Uzbek words go in latin script (a Cyrillic-written Uzbek word is misheard: fix it with `--replace`); Russian words stay in Cyrillic.
 4. **Look at it.** `python3 .claude/skills/reel/scripts/frames.py out/<name>/edit.mp4 out/<name>/frames.jpg`, then Read `frames.jpg`: captions readable, nothing cut off. Check the widest caption line in every frame. If any text touches or crosses the left or right edge, re-run step 3 with `--size` lowered by 4 and look again. Don't report the edit until no line is cut off.
 5. **Self-check.** Go through every brand rule (length, fillers, caption color, words per line). Fix anything that fails before you report.
 6. **Notes.** Write `out/<name>/notes.md`: a title (max 60 characters, no clickbait), the hook (the first sentence a viewer hears), raw length, edit length, seconds removed and the transcript.

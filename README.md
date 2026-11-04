@@ -5,6 +5,7 @@
 - **Mijozlar:** Shoxsaroy Towers (faqat storislar, 6 kun × 3+ storis), universitet, shaxsiy brend (qurilish)
 - **Yangi skill — `stories`:** har bir storis uchun ekrandagi matn, rasm/video, stiker va chaqiriq
 - **Mijoz ma'lumotlari:** `inbox/biz/<mijoz>/README.md` — narx, manzil, FAQ shu yerga yoziladi; agent faqat shu faktlardan foydalanadi
+- **Subtitrlar:** o'zbekcha va ruscha nutq (aralash ham) avtomatik taniladi. Eng yaxshi sifat — `.env` da `ELEVENLABS_API_KEY`; bo'lmasa ko'p tilli Whisper ishlaydi
 - **Brend qoidalari:** `brain/memory.jsonl` ("Brand rules" va "Clients")
 
 Botga misol: *"Shoxsaroy uchun 6 kunlik storis rejasi tuz"*, *"Universitet uchun haftalik kontent-reja"*.
